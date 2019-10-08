@@ -45,11 +45,11 @@ passport.use(new Local(function(username, password, done)
 {
 	const user = findUser(username) // TODO use actual function
 	
-	console.log("attempted login: ", username)
+	console.log("Attempted login: ", username)
 	
 	if (user === undefined)
 	{
-		console.log("user not found")
+		console.log("Fail - user not found")
 		return done(null, false)
 	}
 	
@@ -57,12 +57,12 @@ passport.use(new Local(function(username, password, done)
 	{
 		if (user.hash === result.hash)
 		{
-			console.log("success")
+			console.log("Success")
 			done(null, {"username": username, "password": password})
 		}
 		else
 		{
-			console.log("fail")
+			console.log("Fail - bad password")
 			done(null, false)
 		}
 	})
@@ -77,7 +77,6 @@ app.post(
 	passport.authenticate("local"),
 	function(req, res)
 	{
-		console.log("user:", req.user)
 		res.send()
 	}
 )
@@ -86,28 +85,45 @@ app.post(
 	"/signup",
 	function(req, res)
 	{
-		console.log("new user:", req.body.username)
+		console.log("Signup request: ", req.body.username)
+		
+		if (req.body.username === undefined || req.body.password === undefined
+			|| req.body.username === "" || req.body.password === "")
+		{
+			console.log("Error: not all fields are filled")
+			res.status(400) 	// Bad request
+			res.send()
+			return
+		}
 		
 		// Make sure user does not already exist
 		if (findUser(req.body.username) !== undefined)
 		{
-			console.log(req.body.username + " already exists!!")
-			res.status(403) // Forbidden
+			console.log("Error: username ", req.body.username, " already exists")
+			res.status(403) 	// Forbidden
 			res.send()
 			return
 		}
 		
 		pass.hash(req.body.password).then(function(result)
 		{
-			console.log(req.body.username, result.hash, result.salt)
 			users.push({"username": req.body.username, "hash": result.hash, "salt": result.salt})
+			console.log("Successfully created user ", req.body.username)
 			res.json({"status": "success"})
 		})
 	}
 )
 
-passport.serializeUser((user, done) => done(null, user))
-passport.deserializeUser((user, done) => done(null, user))
+passport.serializeUser((user, done) =>
+{
+	console.log("Serialized user ", user.username)
+	done(null, user)
+})
+passport.deserializeUser((user, done) =>
+{
+	console.log("Deserialized user ", user.username)
+	done(null, user)
+})
 
 
 // ############
