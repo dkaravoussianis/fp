@@ -77,9 +77,7 @@ app.post(
 	passport.authenticate("local"),
 	function(req, res)
 	{
-		console.log(res)
 		console.log("user:", req.user)
-		//res.status(200)
 		res.send()
 	}
 )
@@ -107,6 +105,9 @@ app.post(
 		})
 	}
 )
+
+passport.serializeUser((user, done) => done(null, user))
+passport.deserializeUser((user, done) => done(null, user))
 
 
 // ############
