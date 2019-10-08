@@ -8,12 +8,16 @@
 // ## INITIALIZE APP ##
 // ####################
 
-const express  = require("express")
-const app      = express()
-const session  = require("express-session")
-const passport = require("passport")
-const Local    = require("passport-local").Strategy
-const pass     = require("pwd")
+const express    = require("express")
+const app        = express()
+const session    = require("express-session")
+const passport   = require("passport")
+const Local      = require("passport-local").Strategy
+const pass       = require("pwd")
+const bodyParser = require("body-parser")
+
+// Parse JSON bodies
+app.use(bodyParser.json())
 
 // Serve our compiled react program
 app.use(express.static("dist"))
@@ -33,7 +37,7 @@ app.get("/", function(request, response)
 let users = []
 const findUser = function(username)
 {
-	return users.find({"username": username})
+	return users.find(user => user.username == username)
 }
 /* END TEMP STUFF */
 
@@ -41,8 +45,11 @@ passport.use(new Local(function(username, password, done)
 {
 	const user = findUser(username) // TODO use actual function
 	
+	console.log("attempted login: ", username)
+	
 	if (user === undefined)
 	{
+		console.log("user not found")
 		return done(null, false)
 	}
 	
@@ -50,10 +57,12 @@ passport.use(new Local(function(username, password, done)
 	{
 		if (user.hash === result.hash)
 		{
-			done(null, user)
+			console.log("success")
+			done(null, {"username": username, "password": password})
 		}
 		else
 		{
+			console.log("fail")
 			done(null, false)
 		}
 	})
@@ -70,6 +79,8 @@ app.post(
 	{
 		console.log(res)
 		console.log("user:", req.user)
+		//res.status(200)
+		res.send()
 	}
 )
 
@@ -82,6 +93,7 @@ app.post(
 		// Make sure user does not already exist
 		if (findUser(req.body.username) !== undefined)
 		{
+			console.log(req.body.username + " already exists!!")
 			res.status(403) // Forbidden
 			res.send()
 			return
@@ -89,9 +101,10 @@ app.post(
 		
 		pass.hash(req.body.password).then(function(result)
 		{
+			console.log(req.body.username, result.hash, result.salt)
 			users.push({"username": req.body.username, "hash": result.hash, "salt": result.salt})
 			res.json({"status": "success"})
-		}
+		})
 	}
 )
 
